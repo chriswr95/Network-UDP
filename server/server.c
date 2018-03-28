@@ -1,9 +1,5 @@
-/* Christopher Wright 
- * Lab 3 Server: 
- * Server.c contains code to impliment UDP sending functionality.
- * Server.c takes in a port number. It then binds to the given port, 
- * and waits for a information to arrive over UDP from client.c. It
- * writes the data to the file.
+/* Christopher Wright
+ * Server.c cointains code to impliement UDP with data corruption, and packet loss. 
  */
 
 
@@ -12,6 +8,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 //Structs
 
@@ -99,7 +96,9 @@ int main (int argc, char *argv[]) {
         printf ("bind error\n");
         return 1;
     }
+    //initialize current state and seed rand fxn
     currentState = 0;
+    srand(time(NULL));
 	
 	//recieve filename
 	recvfrom(sock, &recvP, sizeof(struct PACKET), 0, (struct sockaddr *)&serverStorage, &addr_size);
@@ -109,7 +108,11 @@ int main (int argc, char *argv[]) {
 	while(1){
 		if((nBytes = recvfrom (sock, &recvP, sizeof(struct PACKET), 0, (struct sockaddr *)&serverStorage, &addr_size)) > 0){
 			printf("Packet recieved!\n");
-
+			//Simulate packet timout
+			if(rand() % 4 == 1){
+				printf("dropping packet..\n");
+				continue;
+			}
 			//check for debug
 			printf("cksum: %d\n", recvP.h.cksum);
 			printf("data: %s\n", recvP.data);

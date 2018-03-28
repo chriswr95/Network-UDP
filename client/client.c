@@ -1,10 +1,8 @@
 /* Christopher Wright 
- * Lab 3 Client: 
- * Client.c contains code to impliment UDP sending functionality.
- * Client.c takes in a port number, and ip address, an input file name
- * and an ouput file name and transports the file via UDP protocol to
- * the server. The program also contains code to deal with corrupted data
- * which it detects using a checksum.
+ * Lab 4 Client: 
+ * Client.c contains code to impliment UDP with packetloss, and data
+ * corruption. The function is the same as Lab3, with additional 
+ * funcitonality around packet timeout. 
  */
 #include <stdio.h>
 #include <sys/socket.h>
@@ -12,6 +10,7 @@
 #include <string.h>
 #include <math.h> 
 #include <time.h>
+#include <fcntl.h>
 
 
 //Structs
@@ -39,6 +38,13 @@ int mywrite(char buff[], int bytesRead, int *state){
 	struct PACKET p;
 	struct HEADER ack; 
 	int packetSent = 0;
+	struct timeval tv; //timer
+	int rv; //select returned value
+
+	//setup timout functionality
+	fd_set readfds;
+	fcntl(sock,F_SETFL,O_NONBLOCK);
+
 	//initialize packet
 	strcpy(p.data, buff);
 	p.h.seq_ack = *state;
@@ -55,8 +61,20 @@ int mywrite(char buff[], int bytesRead, int *state){
 		printf("cksum: %d\n", p.h.cksum);
 		//send
 		printf("Sending:  %s\n", buff);
+		//setup timer
+		FD_ZERO	(&readfds);
+		FD_SET	(sock,	&readfds);
+		tv.tv_sec = 10;
+		tv.tv_usec = 0;
+		//send packet
 		sendto (sock, &p, sizeof(p), 0, (struct sockaddr *)&serverAddr, addr_size);	
-
+		//call select
+		rv=select(sock+1,&readfds,NULL,NULL,&tv);
+		
+		if(rv == 0){
+			//timout, resend
+			continue;
+		}
 		//recieve
 		recvfrom(sock, &ack, sizeof(struct HEADER), 0, (struct sockaddr *)&serverAddr, &addr_size);
 		printf("recieved ACK %d\n", ack.seq_ack);
