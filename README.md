@@ -6,9 +6,9 @@ A file may be transferred using the client command to the server, provided the s
 
 client.c should be called as follows: 
 
-./client [port number] [ip address] [input filename] [output filename] 
+./c [port number] [ip address] [input filename] [output filename] 
 
 server.c should be called as follows: 
 
-./server [port number]
+./s [port number]
 
